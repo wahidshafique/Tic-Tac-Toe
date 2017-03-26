@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine;
@@ -102,6 +103,15 @@ public class TicTacToe : MonoBehaviour {
         }
     }
 
+    void ResetGame() {
+        moveCount = 0;
+        endMsg.SetActive(false);
+        proxyCroc.GetComponent<Animator>().SetBool("EndGame", false);
+        foreach (GameObject box in actualBoard) {
+            box.GetComponent<BoxScript>().isPlayable = true;
+        }
+    }
+
     int Win() {
         //determines if a player has won, returns 0 otherwise.
         int[,] wins = { { 0, 1, 2 }, { 3, 4, 5 }, { 6, 7, 8 }, { 0, 3, 6 }, { 1, 4, 7 }, { 2, 5, 8 }, { 0, 4, 8 }, { 2, 4, 6 } };
@@ -158,4 +168,41 @@ public class TicTacToe : MonoBehaviour {
         board[move] = 1;
         actualBoard[move].GetComponent<BoxScript>().ComputerTouch();
     }
+
+    //useless useless saving functionality, much like my superflous use of useless 
+    public void SaveGameState() {
+        PlayerPrefs.SetString("Board", string.Join(",", new List<int>(board).ConvertAll(i => i.ToString()).ToArray()));
+    }
+
+    public void LoadGameState() {
+        ResetGame();
+        if (PlayerPrefs.HasKey("Board")) {
+            string prefString = PlayerPrefs.GetString("Board");
+            board = StringToIntList(prefString).ToArray();
+            for (int i = 0; i < actualBoard.Length; i++) {
+                BoxScript boardControl = actualBoard[i].GetComponent<BoxScript>();
+                if (board[i] == -1) {
+                    boardControl.TouchBox();
+                    moveCount++;
+                } else if (board[i] == 1) {
+                    boardControl.ComputerTouch();
+                } else {
+                    boardControl.Reset();
+                }
+            }
+        } else {
+            print("No board to load!");
+        }
+    }
+    public static IEnumerable<int> StringToIntList(string str) {
+        if (string.IsNullOrEmpty(str))
+            yield break;
+
+        foreach (var s in str.Split(',')) {
+            int num;
+            if (int.TryParse(s, out num))
+                yield return num;
+        }
+    }
+
 }
