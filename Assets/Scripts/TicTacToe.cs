@@ -1,9 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.UI;
 using UnityEngine;
 
 public class TicTacToe : MonoBehaviour {
+    //UI Stuff
+    private GameObject endMsg;
     private GameObject proxyCroc;
+    private Text lossesText;
+    private Text drawsText;
+
     [SerializeField]
     private int widthApart = 200;
     [SerializeField]
@@ -16,8 +22,38 @@ public class TicTacToe : MonoBehaviour {
     private GameObject[] actualBoard = new GameObject[9];
     private int[] board = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-    void Start() {
+    void Awake() {
+        lossesText = GameObject.Find("Loss").GetComponent<Text>();
+        drawsText = GameObject.Find("Draws").GetComponent<Text>();
+        lossesText.text = "Losses: " + GetScores("Losses");
+        drawsText.text = "Draws: " + GetScores("Draws");
+
+
         proxyCroc = GameObject.Find("Croc");
+        endMsg = GameObject.Find("EndMsg");
+        endMsg.SetActive(false);
+    }
+    int GetScores(string type) {
+        if (PlayerPrefs.HasKey(type)) {
+            return PlayerPrefs.GetInt(type);
+        } else {
+            PlayerPrefs.SetInt(type, 0);
+            print(type + " not present");
+        }
+        return 0;
+    }
+
+    int IncrementScores(string type) {
+        if (PlayerPrefs.HasKey(type)) {
+            int val = PlayerPrefs.GetInt(type);
+            val += 1;
+            PlayerPrefs.SetInt(type, val);
+            return val;
+        }
+        return 0;
+    }
+
+    void Start() {
         //make the visual board
         int total = 0;
         for (int y = 0; y < boardDimensions.x; y++) {
@@ -33,7 +69,6 @@ public class TicTacToe : MonoBehaviour {
         int winState = 0;
         moveCount++;
         if (moveCount <= Mathf.CeilToInt(board.Length / 2)) {
-            string boardStr = "";
             for (int i = 0; i < actualBoard.Length; i++) {
                 if (actualBoard[i] == instance) {
                     board[i] = -1;
@@ -44,17 +79,23 @@ public class TicTacToe : MonoBehaviour {
             winState = Win();
             if (winState == 1) {
                 print("You lose.\n");
+                lossesText.text = "Losses: " + IncrementScores("Losses");
                 EndGame();
             } else if (winState == -1) {
                 print("You win. Inconceivable!\n");
                 //literally impossible...
             }
         } else {
+            drawsText.text = "Draws: " + IncrementScores("Draws");
             print("A draw. How droll.\n");
+            Text eText = endMsg.GetComponentInChildren<Text>();
+            eText.text = "Draw!";
+            EndGame();
         }
     }
 
     void EndGame() {
+        endMsg.SetActive(true);
         proxyCroc.GetComponent<Animator>().SetBool("EndGame", true);
         foreach (GameObject box in actualBoard) {
             box.GetComponent<BoxScript>().isPlayable = false;
